@@ -6,105 +6,109 @@ import com.google.gson.Gson
 import fi.iki.elonen.*
 
 import com.nizarmah.sada.model.Message
-import com.nizarmah.sada.store.MessageStore
+import com.nizarmah.sada.store.MessageStoreSql
 
 // TowerServer handles requests over a local network.
 class TowerServer(
     port: Int,
-    private val store: MessageStore
+    private val store: MessageStoreSql,
+    private val socketReadTimeout: Int = SOCKET_READ_TIMEOUT
 ) : NanoHTTPD(port) {
 
     private val gson = Gson()
 
-    // Serve is called when a request is received.
-    override fun serve(session: IHTTPSession): Response {
-        return try {
-            when (session.uri) {
-                "/send" -> handleSend(session)
-                "/inbox" -> handleInbox(session)
-
-                else -> newFixedLengthResponse(
-                    Response.Status.NOT_FOUND,
-                    "application/json",
-                    """{"error":"Not Found"}"""
-                )
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-
-            newFixedLengthResponse(
-                Response.Status.INTERNAL_ERROR,
-                "application/json",
-                """{"error":"${e.message}"}"""
-            )
-        }
-    }
-
-    // HandleSend sends a message across the network.
-    private fun handleSend(session: IHTTPSession): Response {
-        // Ensure the request is a POST request.
-        if (session.method != Method.POST) {
-            return newFixedLengthResponse(
-                Response.Status.METHOD_NOT_ALLOWED,
-                "application/json",
-                """{"error":"Method not allowed"}"""
-            )
-        }
-
-        // Prepare the request body.
-        val files = HashMap<String, String>()
-        session.parseBody(files)
-
-        // Retrieve the post data.
-        val body = files["postData"]
-        if (body == null) {
-            return newFixedLengthResponse(
-                Response.Status.BAD_REQUEST,
-                "application/json",
-                """{"error":"Bad Request"}"""
-            )
-        }
-
-        // Create message.
-        val msg = gson.fromJson(body, Message::class.java)
-
-        Log.d("TowerServer", "Received message: $msg")
-
-        store.add(msg)
-
-        return newFixedLengthResponse(
-            Response.Status.OK,
-            "application/json",
-            """{"status":"ok"}"""
-        )
-    }
-
-    // HandleInbox returns the messages sent since a given timestamp.
-    private fun handleInbox(session: IHTTPSession): Response {
-        // If the request is a GET request, return the messages.
-        if (session.method != Method.GET) {
-            return newFixedLengthResponse(
-                Response.Status.METHOD_NOT_ALLOWED,
-                "application/json",
-                """{"error":"Method not allowed"}"""
-            )
-        }
-
-        // Get the messages since the given timestamp.
-        val since = session.parameters["since"]?.firstOrNull()
-        val result = store.getSince(since)
-        val json = gson.toJson(result)
-
-        return newFixedLengthResponse(
-            Response.Status.OK,
-            "application/json",
-            json
-        )
-    }
-
     // StartTower starts the server.
-    fun startTower() = this.start(SOCKET_READ_TIMEOUT, false)
-
+    fun startTower() = this.start(socketReadTimeout, false)
     // StopTower stops the server.
     fun stopTower() = this.stop()
+
+    // Serve is called when a request is received.
+    override fun serve(s: IHTTPSession): Response {
+        return try {
+            when (s.uri) {
+                // Messaging endpoints.
+                "/send" -> handleSend(s)
+                "/inbox" -> handleInbox(s)
+
+                // Dump endpoints.
+                "/dump/export" -> handleDumpExport(s)
+                "/dump/import" -> handleDumpImport(s)
+
+                else -> notFound()
+            }
+        } catch (e: Exception) {
+            err(e)
+        }
+    }
+
+    /** Endpoints */
+
+    // HandleSend sends a message across the network.
+    private fun handleSend(s: IHTTPSession): Response {
+        if (s.method != Method.POST) return badRequest()
+
+        val msg = gson.fromJson(s.getBody(), Message::class.java)
+        store.add(msg)
+
+        return ok()
+    }
+
+    // HandleInbox returns a list of messages.
+    private fun handleInbox(s: IHTTPSession): Response {
+        if (s.method != Method.GET) return badRequest()
+
+        return json(store.all())
+    }
+
+    // HandleDumpImport imports a dump of messages.
+    private fun handleDumpImport(s: IHTTPSession): Response {
+        if (s.method != Method.POST) return badRequest()
+
+        store.importDump(s.getBody())
+
+        return ok()
+    }
+
+    // HandleDumpExport exports a dump of messages.
+    private fun handleDumpExport(s: IHTTPSession): Response {
+        if (s.method != Method.GET) return badRequest()
+
+        return json(store.exportDump())
+    }
+
+    /** Helpers */
+
+    // Text returns a plain text response.
+    private fun text(status: Response.IStatus,  t: String) = newFixedLengthResponse(
+        status, "text/plain", t)
+    // JSON returns a JSON response.
+    private fun json(obj: Any) = newFixedLengthResponse(
+        Response.Status.OK, "application/json", gson.toJson(obj))
+
+    // Ok returns a 200 OK response.
+    private fun ok() = text(Response.Status.OK, "ok")
+    // NotFound returns a 404 NOT FOUND response.
+    private fun notFound() = text(Response.Status.NOT_FOUND, "not found")
+    // BadRequest returns a 400 BAD REQUEST response.
+    private fun badRequest() = text(Response.Status.BAD_REQUEST, "bad request")
+
+    // Err returns a 500 INTERNAL SERVER response.
+    private fun err(e: Exception) : Response {
+        val msg = e.message.orEmpty()
+
+        Log.e("TowerServer", msg, e)
+
+        return text(
+            Response.Status.INTERNAL_ERROR,
+            "500 internal server error ($msg)"
+        )
+    }
+
+    // GetBody returns the body of the request.
+    private fun IHTTPSession.getBody(): String {
+        val files = HashMap<String, String>()
+        this.parseBody(files)
+
+        return files["postData"].orEmpty()
+    }
 }

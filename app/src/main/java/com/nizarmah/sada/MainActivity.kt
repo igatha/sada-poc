@@ -1,25 +1,35 @@
 package com.nizarmah.sada
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 
 import com.nizarmah.sada.server.TowerServer
-import com.nizarmah.sada.store.MessageStore
+import com.nizarmah.sada.db.MessageDbHelper
+import com.nizarmah.sada.store.MessageStoreSql
 import com.nizarmah.sada.util.NetworkUtils
+
+// Constants for the database.
+private const val DB_NAME = "sada_messages.db"
+private const val TBL_NAME_MESSAGES = "messages"
+
+// Constants for the Tower server.
+private const val TOWER_PORT = 8080
 
 // MainActivity is the entry-point for our app.
 class MainActivity : ComponentActivity() {
 
-    // MessageStore is needed by the Tower to store messages.
-    private lateinit var messageStore: MessageStore
+    // MessageStoreSql is needed by the Tower to store messages.
+    private lateinit var messageDb: MessageDbHelper
+    private lateinit var messageStore: MessageStoreSql
     // Tower is the server the handles local network requests.
     private lateinit var tower: TowerServer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setupTower()
+        setupTower(this)
     }
 
     override fun onDestroy() {
@@ -28,7 +38,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // SetupTower starts the tower if the device has an IP.
-    private fun setupTower() {
+    private fun setupTower(ctx: Context) {
         // Ensure the device is on a network.
         // The Tower should be on a hotspot network, ideally.
         val ip = NetworkUtils.getLocalIpAddress()
@@ -36,13 +46,13 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        // Create the message store.
-        messageStore = MessageStore()
+        messageDb = MessageDbHelper(ctx, DB_NAME, 1, TBL_NAME_MESSAGES)
+        messageStore = MessageStoreSql(messageDb.writableDatabase, TBL_NAME_MESSAGES)
 
         // Start the tower.
-        tower = TowerServer(port=8080, messageStore)
+        tower = TowerServer(port=TOWER_PORT, messageStore)
         tower.startTower()
 
-        Log.d("Tower", "Tower running at http://$ip:8080")
+        Log.d("Tower", "Tower running at http://$ip:$TOWER_PORT")
     }
 }

@@ -17,8 +17,8 @@ private const val TBL_NAME_MESSAGES = "messages"
 // Constants for the Tower server.
 private const val TOWER_PORT = 8080
 
-// MainActivity is the entry-point for our app.
-class MainActivity : ComponentActivity() {
+// TowerActivity is the entry-point for our app.
+class TowerActivity : ComponentActivity() {
 
     // MessageStoreSql is needed by the Tower to store messages.
     private lateinit var messageDb: MessageDbHelper
@@ -38,12 +38,12 @@ class MainActivity : ComponentActivity() {
     }
 
     // SetupTower starts the tower if the device has an IP.
-    private fun setupTower(ctx: Context) {
+    private fun setupTower(ctx: Context): String {
         // Ensure the device is on a network.
         // The Tower should be on a hotspot network, ideally.
         val ip = NetworkUtils.getLocalIpAddress()
         if (ip == null) {
-            return
+            return ""
         }
 
         messageDb = MessageDbHelper(ctx, DB_NAME, 1, TBL_NAME_MESSAGES)
@@ -53,6 +53,9 @@ class MainActivity : ComponentActivity() {
         tower = TowerServer(port=TOWER_PORT, messageStore)
         tower.startTower()
 
-        Log.d("Tower", "Tower running at http://$ip:$TOWER_PORT")
+        val url = "http://$ip:$TOWER_PORT"
+        Log.d("Tower", "Tower running at $url")
+
+        return url
     }
 }

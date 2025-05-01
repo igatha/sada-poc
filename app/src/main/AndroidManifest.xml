@@ -14,17 +14,46 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Sada"
         tools:targetApi="31">
+
         <activity
-            android:name=".MainActivity"
+            android:name=".TowerActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.Sada">
+            android:icon="@mipmap/ic_tower"
+            android:label="Sada Tower"
+            android:theme="@style/Theme.Sada"
+            android:taskAffinity="com.nizarmah.sada.tower">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".RelayActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_relay"
+            android:label="Sada Relay"
+            android:theme="@style/Theme.Sada"
+            android:taskAffinity="com.nizarmah.sada.relay">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SmsActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_sms"
+            android:label="Sada SMS"
+            android:theme="@style/Theme.Sada"
+            android:taskAffinity="com.nizarmah.sada.sms">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
     </application>
 
 </manifest>

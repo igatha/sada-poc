@@ -1,47 +1,48 @@
 package com.nizarmah.sada
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.nizarmah.sada.ui.theme.SadaTheme
 
+import com.nizarmah.sada.server.TowerServer
+import com.nizarmah.sada.store.MessageStore
+import com.nizarmah.sada.util.NetworkUtils
+
+// MainActivity is the entry-point for our app.
 class MainActivity : ComponentActivity() {
+
+    // MessageStore is needed by the Tower to store messages.
+    private lateinit var messageStore: MessageStore
+    // Tower is the server the handles local network requests.
+    private lateinit var tower: TowerServer
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            SadaTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-        }
+
+        setupTower()
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+    override fun onDestroy() {
+        super.onDestroy()
+        tower.stopTower()
+    }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SadaTheme {
-        Greeting("Android")
+    // SetupTower starts the tower if the device has an IP.
+    private fun setupTower() {
+        // Ensure the device is on a network.
+        // The Tower should be on a hotspot network, ideally.
+        val ip = NetworkUtils.getLocalIpAddress()
+        if (ip == null) {
+            return
+        }
+
+        // Create the message store.
+        messageStore = MessageStore()
+
+        // Start the tower.
+        tower = TowerServer(port=8080, messageStore)
+        tower.startTower()
+
+        Log.d("Tower", "Tower running at http://$ip:8080")
     }
 }

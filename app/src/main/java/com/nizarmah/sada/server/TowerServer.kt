@@ -34,6 +34,9 @@ class TowerServer(
                 "/dump/export" -> handleDumpExport(s)
                 "/dump/import" -> handleDumpImport(s)
 
+                // Healthcheck endpoints.
+                "/tower/healthcheck" -> handleTowerHealthcheck(s)
+
                 else -> notFound()
             }
         } catch (e: Exception) {
@@ -74,6 +77,13 @@ class TowerServer(
         if (s.method != Method.GET) return badRequest()
 
         return json(store.exportDump())
+    }
+
+    // HandleTowerHealthcheck returns 200 to indicate tower is up.
+    private fun handleTowerHealthcheck(s: IHTTPSession): Response {
+        if (s.method != Method.GET) return badRequest()
+
+        return ok()
     }
 
     /** Helpers */

@@ -18,8 +18,7 @@ class MessageDbHelper(
             """
             CREATE TABLE IF NOT EXISTS $tableName (
                 ${Message.MESSAGE_ID} TEXT PRIMARY KEY,
-                ${Message.FROM_ID}    TEXT,
-                ${Message.TO_ID}      TEXT,
+                ${Message.USERNAME}    TEXT,
                 ${Message.CONTENT}    TEXT,
                 ${Message.TIMESTAMP}  TEXT
             )

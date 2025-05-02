@@ -9,6 +9,7 @@ import com.nizarmah.sada.server.TowerServer
 import com.nizarmah.sada.db.MessageDbHelper
 import com.nizarmah.sada.store.MessageStoreSql
 import com.nizarmah.sada.util.NetworkUtils
+import com.nizarmah.sada.util.PermissionsManager
 
 // Constants for the database.
 private const val DB_NAME = "sada_messages.db"
@@ -28,13 +29,17 @@ class TowerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setupTower(this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         tower.stopTower()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        PermissionsManager.refreshPermissions(this)
     }
 
     // SetupTower starts the tower if the device has an IP.

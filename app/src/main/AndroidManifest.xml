@@ -23,7 +23,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Sada"
         tools:targetApi="31"
-
         android:usesCleartextTraffic="true">
 
         <activity

@@ -55,6 +55,10 @@ class SmsViewModel(app: Application) : AndroidViewModel(app) {
             _deviceIp.value = NetworkUtils.getLocalIpAddress().orEmpty()
             _towerIp.value = NetworkUtils.getGatewayIpAddress(app).orEmpty()
             _towerOnline.value = isTowerOnline()
+
+            if (_towerOnline.value) {
+                refreshMessages()
+            }
         }
     }
 
@@ -107,7 +111,7 @@ class SmsViewModel(app: Application) : AndroidViewModel(app) {
             _sendError.value = !success
             if (success) {
                 _messageText.value = ""
-                refreshInbox()
+                refreshMessages()
             }
         }
     }
@@ -137,11 +141,11 @@ class SmsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun refreshInbox() {
+    fun refreshMessages() {
         viewModelScope.launch {
             var newMessages = emptyList<Message>()
             try {
-                newMessages = fetchInbox()
+                newMessages = fetchMessages()
             } catch (e: Exception) {
                 Log.e("SmsViewModel", "Error refreshing inbox", e)
             }
@@ -150,7 +154,7 @@ class SmsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private suspend fun fetchInbox(): List<Message> = withContext(Dispatchers.IO) {
+    private suspend fun fetchMessages(): List<Message> = withContext(Dispatchers.IO) {
         try {
             val url = URL("http://${_towerIp.value}:$TOWER_PORT/inbox")
 

@@ -13,7 +13,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,6 +36,15 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+    dependenciesInfo {
+        // Exclude dependency block from APKs for open source compliance.
+        // @see https://android.izzysoft.de/articles/named/iod-scan-apkchecks#blobs
+        includeInApk = false
+        // Include dependency block in AAB for playstore compliance.
+        // @see https://developer.android.com/build/dependencies#dependency-info-play
+        includeInBundle = true
     }
 }
 

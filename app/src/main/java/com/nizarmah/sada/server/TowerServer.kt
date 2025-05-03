@@ -30,12 +30,11 @@ class TowerServer(
                 "/send" -> handleSend(s)
                 "/inbox" -> handleInbox(s)
 
-                // Dump endpoints.
-                "/dump/export" -> handleDumpExport(s)
-                "/dump/import" -> handleDumpImport(s)
+                // Sync endpoints.
+                "/sync" -> handleSync(s)
 
                 // Healthcheck endpoints.
-                "/tower/healthcheck" -> handleTowerHealthcheck(s)
+                "/healthcheck" -> handleHealthcheck(s)
 
                 else -> notFound()
             }
@@ -63,24 +62,21 @@ class TowerServer(
         return json(store.all())
     }
 
-    // HandleDumpImport imports a dump of messages.
-    private fun handleDumpImport(s: IHTTPSession): Response {
-        if (s.method != Method.POST) return badRequest()
+    private fun handleSync(s: IHTTPSession): Response {
+        if (s.method == Method.GET) {
+            return json(store.all())
+        }
 
-        store.importDump(s.getBody())
+        if (s.method == Method.POST) {
+            store.importDump(s.getBody())
+            return ok()
+        }
 
-        return ok()
+        return badRequest()
     }
 
-    // HandleDumpExport exports a dump of messages.
-    private fun handleDumpExport(s: IHTTPSession): Response {
-        if (s.method != Method.GET) return badRequest()
-
-        return json(store.exportDump())
-    }
-
-    // HandleTowerHealthcheck returns 200 to indicate tower is up.
-    private fun handleTowerHealthcheck(s: IHTTPSession): Response {
+    // HandleHealthcheck returns 200 to indicate tower is up.
+    private fun handleHealthcheck(s: IHTTPSession): Response {
         if (s.method != Method.GET) return badRequest()
 
         return ok()

@@ -31,7 +31,7 @@ import java.util.UUID
 
 @Composable
 fun TowerView(
-    towerIp: String,
+    towerUrl: String,
     messageCount: Int,
     messages: List<Message>,
     permissions: Array<String>,
@@ -71,7 +71,7 @@ fun TowerView(
 
             // Tower Info
             Text(
-                text = "Tower IP: $towerIp",
+                text = "Tower URL: $towerUrl",
                 style = MaterialTheme.typography.bodySmall
             )
             Text(
@@ -155,7 +155,7 @@ fun TowerView(
 @Composable
 fun TowerViewPreview() {
     TowerView(
-        towerIp = "192.168.1.100",
+        towerUrl = "http://192.168.1.100:8080",
         messageCount = 3,
         messages = listOf(
             Message(

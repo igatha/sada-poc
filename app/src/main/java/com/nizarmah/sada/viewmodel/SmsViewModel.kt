@@ -12,15 +12,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.UUID
 import com.google.gson.Gson
 
 import com.nizarmah.sada.model.Message
 import com.nizarmah.sada.util.NetworkUtils
 import com.nizarmah.sada.util.PermissionsHelper
 import com.nizarmah.sada.util.PermissionsManager
-import java.util.UUID
 
 private const val TOWER_PORT = 8080
+
+private const val TOWER_HEALTHCHECK = "/healthcheck"
+private const val TOWER_SEND = "/send"
+private const val TOWER_MESSAGES = "/inbox"
 
 class SmsViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -68,7 +72,7 @@ class SmsViewModel(app: Application) : AndroidViewModel(app) {
         }
 
         try {
-            val url = URL("http://${_towerIp.value}:$TOWER_PORT/tower/healthcheck")
+            val url = URL("http://${_towerIp.value}:$TOWER_PORT$TOWER_HEALTHCHECK")
 
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
@@ -118,7 +122,7 @@ class SmsViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun sendMessageToServer(message: Message): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = URL("http://${_towerIp.value}:$TOWER_PORT/send")
+            val url = URL("http://${_towerIp.value}:$TOWER_PORT$TOWER_SEND")
 
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
@@ -156,7 +160,7 @@ class SmsViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun fetchMessages(): List<Message> = withContext(Dispatchers.IO) {
         try {
-            val url = URL("http://${_towerIp.value}:$TOWER_PORT/inbox")
+            val url = URL("http://${_towerIp.value}:$TOWER_PORT$TOWER_MESSAGES")
 
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"

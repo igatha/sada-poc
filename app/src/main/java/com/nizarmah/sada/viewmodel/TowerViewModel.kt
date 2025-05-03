@@ -24,6 +24,8 @@ import com.nizarmah.sada.store.MessageStoreSql
 import com.nizarmah.sada.server.TowerServer
 
 private const val TOWER_PORT = 8080
+private const val TOWER_MESSAGES = "/inbox"
+
 private const val DB_NAME = "sada_messages.db"
 private const val TBL_NAME_MESSAGES = "messages"
 
@@ -38,8 +40,8 @@ class TowerViewModel(app: Application) : AndroidViewModel(app) {
     val permissions = PermissionsHelper.getTowerPermissions()
     val permissionsGranted = PermissionsManager.towerPermitted
 
-    private val _towerIp = MutableStateFlow<String>("")
-    val towerIp: StateFlow<String> = _towerIp
+    private val _towerUrl = MutableStateFlow<String>("")
+    val towerUrl: StateFlow<String> = _towerUrl
 
     private val _messageCount = MutableStateFlow(0)
     val messageCount: StateFlow<Int> = _messageCount
@@ -61,7 +63,7 @@ class TowerViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
 
-        _towerIp.value = ip
+        _towerUrl.value = "http://$ip:$TOWER_PORT"
 
         // Setup database
         messageDb = MessageDbHelper(getApplication(), DB_NAME, 1, TBL_NAME_MESSAGES)
@@ -71,7 +73,7 @@ class TowerViewModel(app: Application) : AndroidViewModel(app) {
         tower = TowerServer(port = TOWER_PORT, messageStore)
         tower.startTower()
 
-        Log.d("TowerViewModel", "Tower running at http://$ip:$TOWER_PORT")
+        Log.d("TowerViewModel", "Tower running at ${_towerUrl.value}")
     }
 
     override fun onCleared() {
@@ -94,7 +96,7 @@ class TowerViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun fetchMessages(): List<Message> = withContext(Dispatchers.IO) {
         try {
-            val url = URL("http://${_towerIp.value}:$TOWER_PORT/inbox")
+            val url = URL("${_towerUrl.value}$TOWER_MESSAGES")
 
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"

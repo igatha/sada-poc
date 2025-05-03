@@ -15,13 +15,13 @@ fun TowerScreen() {
     val permissions = viewModel.permissions
     val permissionsGranted by viewModel.permissionsGranted.collectAsState()
 
-    val towerIp by viewModel.towerIp.collectAsState()
+    val towerUrl by viewModel.towerUrl.collectAsState()
     val messageCount by viewModel.messageCount.collectAsState()
 
     val messages by viewModel.messages.collectAsState()
 
     TowerView(
-        towerIp = towerIp,
+        towerUrl = towerUrl,
         messageCount = messageCount,
         messages = messages,
         permissions = permissions,

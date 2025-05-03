@@ -21,7 +21,7 @@ class MessageStoreSql(
 
     // All returns all messages in the database.
     fun all(): List<Message> =
-        db.rawQuery("SELECT * FROM $tableName", null).use { c ->
+        db.rawQuery("SELECT * FROM $tableName ORDER BY timestamp ASC", null).use { c ->
             buildList {
                 while (c.moveToNext()) add(
                     Message.fromCursor(c)
@@ -29,14 +29,12 @@ class MessageStoreSql(
             }
         }
 
-    // ExportDump returns a NL-JSON dump of all messages in the database.
-    fun exportDump(): String = buildString {
-        all().forEach { append(gson.toJson(it)).append('\n') }
-    }
+    // ImportDump imports a JSON dump into the database.
+    fun importDump(json: String) {
+        // Parse the response as a list of Message objects
+        val type = object : com.google.gson.reflect.TypeToken<List<Message>>() {}.type
+        val messages = gson.fromJson<List<Message>>(json, type)
 
-    // ImportDump imports a NL-JSON dump into the database.
-    fun importDump(nljson: String) =
-        nljson.lineSequence().filter { it.isNotBlank() }.forEach {
-            add(gson.fromJson(it, Message::class.java))
-        }
+        messages.forEach { add(it) }
+    }
 }

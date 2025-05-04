@@ -27,7 +27,7 @@ For example, Gazans walk to the Egyptian border to get cell service ([readmore](
 
 You need at least 2 devices (1 Sada Tower, and 1 Sada SMS). Check "Components" for a guide on how to use each.
 
-Check the [releases](https://github.com/nizarmah/sada-poc/releases) for the latest version.
+Check the [releases](https://github.com/igatha/sada-poc/releases) for the latest version.
 
 ## Components
 

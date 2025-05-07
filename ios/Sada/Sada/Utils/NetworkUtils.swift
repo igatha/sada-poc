@@ -40,13 +40,42 @@ struct NetworkUtils {
     // Returns a static gateway IP address.
     // In a real scenario, you might need to pass a context or use specific iOS APIs.
     static func getGatewayIpAddress() -> String? {
-        // For now, we'll use a common gateway pattern based on the local IP
+        let monitor = NWPathMonitor(requiredInterfaceType: .wifi)
+        let group = DispatchGroup()
+        var gatewayIP: String?
+
+        group.enter()
+
+        monitor.pathUpdateHandler = { path in
+            if let gateway = path.gateways.first {
+                gatewayIP = gateway.debugDescription
+            }
+            group.leave()
+        }
+
+        let queue = DispatchQueue(label: "NetworkMonitor")
+        monitor.start(queue: queue)
+
+        // Wait for the path update with a timeout
+        let result = group.wait(timeout: .now() + 2.0)
+        monitor.cancel()
+
+        if result == .success {
+            if let ip = gatewayIP, ip.contains(":") {
+                return ip.split(separator: ":").first.map(String.init)
+            }
+
+            return gatewayIP
+        }
+
+        // Fallback to using the local IP pattern if dynamic detection fails
         if let localIP = getLocalIpAddress() {
             let components = localIP.split(separator: ".")
             if components.count == 4 {
-                return "\(components[0]).\(components[1]).\(components[2]).5"
+                return "\(components[0]).\(components[1]).\(components[2]).1"
             }
         }
+        
         return nil
     }
 }

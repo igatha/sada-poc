@@ -50,7 +50,7 @@ class SmsViewModel: ObservableObject {
 
     func sendMessage() {
         let message = Message(
-            messageId: UUID().uuidString,
+            messageId: UUID().uuidString.lowercased(),
             username: username,
             content: messageText,
             timestamp: String(Int64(Date().timeIntervalSince1970 * 1000))

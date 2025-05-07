@@ -74,13 +74,21 @@ class SmsViewModel: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 10
 
         do {
             let data = try JSONEncoder().encode(message)
             request.httpBody = data
 
             let (_, response) = try await URLSession.shared.data(for: request)
-            return (response as? HTTPURLResponse)?.statusCode == 200
+            guard let httpResponse = response as? HTTPURLResponse else { return false }
+
+            if httpResponse.statusCode == 200 {
+                return true
+            } else {
+                print("SmsViewModel: Server returned status code:", httpResponse.statusCode)
+                return false
+            }
         } catch {
             print("SmsViewModel: Failed to send message:", error)
             return false
@@ -94,10 +102,12 @@ class SmsViewModel: ObservableObject {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.timeoutInterval = 5
 
         do {
             let (_, response) = try await URLSession.shared.data(for: request)
-            return (response as? HTTPURLResponse)?.statusCode == 200
+            guard let httpResponse = response as? HTTPURLResponse else { return false }
+            return httpResponse.statusCode == 200
         } catch {
             print("SmsViewModel: Error checking tower online:", error)
             return false
@@ -109,6 +119,7 @@ class SmsViewModel: ObservableObject {
             messages = try await fetchMessages()
         } catch {
             print("SmsViewModel: Error refreshing inbox:", error)
+            messages = []
         }
     }
 
@@ -119,11 +130,15 @@ class SmsViewModel: ObservableObject {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.timeoutInterval = 10
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("SmsViewModel: Failed to fetch inbox:", (response as? HTTPURLResponse)?.statusCode ?? -1)
-            return []
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "SmsViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw NSError(domain: "SmsViewModel", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned status code: \(httpResponse.statusCode)"])
         }
 
         return try JSONDecoder().decode([Message].self, from: data)
